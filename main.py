@@ -2,41 +2,66 @@ import os
 
 os.environ["TRANSFORMERS_CACHE"] = "E:/SFgroup/transformers_cache"
 
+from flask import Flask, request, jsonify
+
 import librosa
+from vosk import Model, KaldiRecognizer, SetLogLevel
+from transformers import pipeline
+from pydub import AudioSegment
 import torch
 from transformers import Wav2Vec2ForCTC, Wav2Vec2Tokenizer, pipeline
+from sumy.parsers.plaintext import PlaintextParser
+from sumy.nlp.tokenizers import Tokenizer
+from sumy.summarizers.lsa import LsaSummarizer
+from sumy.nlp.stemmers import Stemmer
+from sumy.utils import get_stop_words
+
+import urllib.parse
 from subprocess import call
+import json
+from time import time
+from typing import Iterable, List
 
-input_file = 'videoplayback.mp4'
-audio_file = 'output.wav'
+app = Flask(__name__)
 
-if not os.path.exists(audio_file) or True:
-    call(f'ffmpeg -i {input_file} -y -b:a 16k -vn {audio_file}')
+LANGUAGE = 'russian'
+FRAME_RATE = 16000
+CHANNELS = 1
 
-# Загружаем аудио с помощью librosa
-waveform, sample_rate = librosa.load(audio_file, sr=16000)
 
-# Загружаем Wav2Vec 2.0 для распознавания речи
-tokenizer = Wav2Vec2Tokenizer.from_pretrained("UrukHan/wav2vec2-russian")
-model = Wav2Vec2ForCTC.from_pretrained("UrukHan/wav2vec2-russian")
+def tokenize_audio():
+    model = Model("vosk-model-ru-0.22")
+    rec = KaldiRecognizer(model, FRAME_RATE)
+    rec.SetWords(True)
 
-# Преобразуем аудио в input_values для модели
-input_values = tokenizer(waveform, return_tensors="pt", padding="longest").input_values
+    mp3 = AudioSegment.from_wav('output.wav')
+    mp3 = mp3.set_channels(CHANNELS)
+    mp3 = mp3.set_frame_rate(FRAME_RATE)
 
-# Распознаем текст
-with torch.no_grad():
-    logits = model(input_values).logits
+    rec.AcceptWaveform(mp3.raw_data)
+    result = rec.Result()
+    text = json.loads(result)["text"]
 
-# Получаем результат
-predicted_ids = torch.argmax(logits, dim=-1)
-transcription = tokenizer.decode(predicted_ids[0])
+    with open(f'data_{time()}.txt', 'w') as f:
+        json.dump(text, f, ensure_ascii=False, indent=4)
+    return text
 
-print("Распознанный текст: ", transcription)
 
-# Теперь используем модель суммаризации на основе BERT (например, BART)
-summarizer = pipeline("summarization", model="facebook/bart-large-cnn")
+def summarize_text(text: str) -> Iterable[str]:
+    parser = PlaintextParser.from_string(text, Tokenizer(LANGUAGE))
 
-# Составляем краткое содержание
-summary = summarizer(transcription[:1024], max_length=300, min_length=30, do_sample=False)
+    stemmer = Stemmer(LANGUAGE)
+    summarizer = LsaSummarizer(stemmer)
+    summarizer.stop_words = get_stop_words(LANGUAGE)
 
-print("Краткое содержание: ", summary[0]['summary_text'])
+    return '. '.join([str(i) for i in summarizer(parser.document, max(text.count('.'), 1))])
+
+
+@app.route('/summarize-text', methods=['GET'])
+def get_from_text():
+    print(res := summarize_text(urllib.parse.unquote(request.args['text'])))
+    return res, 200
+
+
+if __name__ == '__main__':
+    app.run(debug=True)
