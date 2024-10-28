@@ -1,66 +1,84 @@
-import os
-
-os.environ["TRANSFORMERS_CACHE"] = "E:/SFgroup/transformers_cache"
-
 from flask import Flask, request, jsonify
-
-import librosa
-from vosk import Model, KaldiRecognizer, SetLogLevel
-from transformers import pipeline
-from pydub import AudioSegment
-import torch
-from transformers import Wav2Vec2ForCTC, Wav2Vec2Tokenizer, pipeline
-from sumy.parsers.plaintext import PlaintextParser
-from sumy.nlp.tokenizers import Tokenizer
-from sumy.summarizers.lsa import LsaSummarizer
-from sumy.nlp.stemmers import Stemmer
-from sumy.utils import get_stop_words
-
+from requests import get
+from sqlalchemy import create_engine, Column, Integer, String, Boolean, select
+from sqlalchemy.orm import DeclarativeBase, Session
 import urllib.parse
 from subprocess import call
 import json
 from time import time
 from typing import Iterable, List
 
+from models import *
+
+YANDEX_DISK_URL = 'https://cloud-api.yandex.net/v1/disk/public/resources/download?'
+
+
+class Tokens(DeclarativeBase):
+    __tablename__ = 'tokens'
+
+    id = Column(Integer, primary_key=True, unique=True, nullable=False)
+    token = Column(String, unique=True, nullable=False)
+    is_paid = Column(Boolean, nullable=False, default=False)
+
+
 app = Flask(__name__)
-
-LANGUAGE = 'russian'
-FRAME_RATE = 16000
-CHANNELS = 1
+tokens_engine = create_engine('sqlite:///tokens.db')
+Tokens.metadata.create_all(tokens_engine)
 
 
-def tokenize_audio():
-    model = Model("vosk-model-ru-0.22")
-    rec = KaldiRecognizer(model, FRAME_RATE)
-    rec.SetWords(True)
-
-    mp3 = AudioSegment.from_wav('output.wav')
-    mp3 = mp3.set_channels(CHANNELS)
-    mp3 = mp3.set_frame_rate(FRAME_RATE)
-
-    rec.AcceptWaveform(mp3.raw_data)
-    result = rec.Result()
-    text = json.loads(result)["text"]
-
-    with open(f'data_{time()}.txt', 'w') as f:
-        json.dump(text, f, ensure_ascii=False, indent=4)
-    return text
+def check_token(token):
+    with Session(tokens_engine) as session:
+        return bool(Tokens.query.filter_by(token=token).first())
 
 
-def summarize_text(text: str) -> Iterable[str]:
-    parser = PlaintextParser.from_string(text, Tokenizer(LANGUAGE))
+def yandex_disk_download(url):
+    final_url = YANDEX_DISK_URL + urllib.parse.urlencode(dict(public_key=url))
+    response = get(final_url)
+    download_url = response.json()['href']
 
-    stemmer = Stemmer(LANGUAGE)
-    summarizer = LsaSummarizer(stemmer)
-    summarizer.stop_words = get_stop_words(LANGUAGE)
+    download_response = get(download_url)
+    filename = f'downloads/y_audio_{time()}.{download_url.rsplit(".")[-1]}'
+    with open(filename, 'wb') as f:
+        f.write(download_response.content)
+    return filename
 
-    return '. '.join([str(i) for i in summarizer(parser.document, max(text.count('.'), 1))])
+
+@app.route('/<string:token>/summarize-text', methods=['GET'])
+def get_from_text(token):
+    if check_token(token):
+        if request.args['text']:
+            print(res := summarize_text(urllib.parse.unquote(request.args['text'])))
+            return res, 200
+        return 'Request has not contain text', 400
+    return 'Unexpected token', 403
 
 
-@app.route('/summarize-text', methods=['GET'])
-def get_from_text():
-    print(res := summarize_text(urllib.parse.unquote(request.args['text'])))
-    return res, 200
+@app.route('/<string:token>/from-yadisk', methods=['GET'])
+def get_from_text(token):
+    if check_token(token):
+        if request.args['link']:
+            file = yandex_disk_download(urllib.parse.unquote(request.args['link']))
+            text = tokenize_audio(file)
+            print(res := summarize_text(text))
+            return res, 200
+        return 'Request has not contain link to Yandex Disk', 400
+    return 'Unexpected token', 403
+
+
+@app.route('/<string:token>/from-file', methods=['GET'])
+def get_from_text(token):
+    if check_token(token):
+        print(res := summarize_text(urllib.parse.unquote(request.args['text'])))
+        return res, 200
+    return 'Unexpected token', 403
+
+
+@app.route('/<string:token>/from-url', methods=['GET'])
+def get_from_text(token):
+    if check_token(token):
+        print(res := summarize_text(urllib.parse.unquote(request.args['text'])))
+        return res, 200
+    return 'Unexpected token', 403
 
 
 if __name__ == '__main__':
