@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SummLessonsAI</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4e9f5;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #6a4ca2;
+            padding: 10px 20px;
+            color: white;
+        }
+        .header-left, .header-right {
+            display: flex;
+            align-items: center;
+        }
+        .header-right a {
+            margin-left: 20px;
+            color: white;
+            text-decoration: none;
+        }
+        .header-right button {
+            margin-left: 10px;
+            padding: 10px 15px;
+            background-color: #8f6bc8;
+            border: none;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .main-menu {
+            text-align: center;
+            padding: 20px;
+            background-color: #dbc1f0;
+        }
+        .menu-option {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: white;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .menu-option img {
+            height: 100px;
+        }
+        .menu-option button {
+            padding: 10px 20px;
+            background-color: #6a4ca2;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .library {
+            padding: 20px;
+        }
+        .library h2 {
+            text-align: center;
+        }
+        .library-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            padding: 20px;
+        }
+        .library-card {
+            padding: 20px;
+            background-color: white;
+            border-radius: 10px;
+        }
+        .sfgroup {
+            display: flex;
+            padding: 20px;
+            background-color: #e8e4f0;
+        }
+        .sfgroup img {
+            max-width: 200px;
+            border-radius: 10px;
+        }
+        .sfgroup div {
+            margin-left: 20px;
+        }
+        footer {
+            text-align: center;
+            padding: 10px;
+            background-color: #dbc1f0;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <div class="header-left">
+            <h1>SummLessonsAI</h1>
+        </div>
+        <div class="header-right">
+            <a href="#">Community</a>
+            <a href="#">Pricing</a>
+            <a href="#">Contact</a>
+            <button>Sign in</button>
+            <button>Sign up</button>
+        </div>
+    </header>
+
+    <!-- Main Menu -->
+    <section class="main-menu">
+        <h2>Main Menu</h2>
+        <p>What would you like to do?</p>
+
+        <div class="menu-option">
+            <div>
+                <h3>Generate lesson synopsis</h3>
+                <p>Let AI summarize a lesson for you</p>
+            </div>
+            <button>Start</button>
+        </div>
+
+        <div class="menu-option">
+            <div>
+                <h3>Create study plan</h3>
+                <p>Get recommendations on what to study</p>
+            </div>
+            <button>Start</button>
+        </div>
+
+        <div class="menu-option">
+            <div>
+                <h3>Generate test</h3>
+                <p>Let AI create a practice test for you</p>
+            </div>
+            <button>Start</button>
+        </div>
+    </section>
+
+    <!-- Library -->
+    <section class="library">
+        <h2>Library - Popular Works</h2>
+        <div class="library-grid">
+            <div class="library-card">
+                <h3>Title</h3>
+                <p>The main text is everything you would like to say about this work (main theses, quotes, or a short description).</p>
+            </div>
+            <div class="library-card">
+                <h3>Title</h3>
+                <p>The main text is everything you would like to say about this work (main theses, quotes, or a short description).</p>
+            </div>
+            <div class="library-card">
+                <h3>Title</h3>
+                <p>The main text is everything you would like to say about this work (main theses, quotes, or a short description).</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- SFGroup Section -->
+    <section class="sfgroup">
+        <img src="team-photo.jpg" alt="Team photo">
+        <div>
+            <h2>About SFGroup</h2>
+            <p>The SFGroup team is a young team created in the summer of 2024. Winner of the project competition among participants of the profile shift "Artificial Intelligence and Machine Learning".</p>
+            <p>Team captain, program developer - 11th grade student...</p>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <p>+7 905 373-47-64 | support@summlessonsai.ru</p>
+        <p>Powered by Vcode Projects</p>
+    </footer>
+
+</body>
+</html>
